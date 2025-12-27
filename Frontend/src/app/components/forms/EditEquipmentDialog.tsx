@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -18,14 +18,16 @@ import {
   SelectValue,
 } from '../ui/select';
 import { useEquipment } from '../../contexts/EquipmentContext';
+import { Equipment } from '../../data/mockData';
 
-interface AddEquipmentDialogProps {
+interface EditEquipmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  equipment: Equipment | null;
 }
 
-export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogProps) {
-  const { addEquipment } = useEquipment();
+export function EditEquipmentDialog({ open, onOpenChange, equipment }: EditEquipmentDialogProps) {
+  const { updateEquipment } = useEquipment();
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -36,44 +38,55 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
     purchaseDate: '',
     warrantyExpiry: '',
     status: 'active' as 'active' | 'scrapped',
-    lastMaintenance: new Date().toISOString().split('T')[0],
   });
+
+  useEffect(() => {
+    if (equipment) {
+      setFormData({
+        name: equipment.name,
+        category: equipment.category,
+        department: equipment.department,
+        location: equipment.location,
+        model: equipment.model,
+        serialNumber: equipment.serialNumber,
+        purchaseDate: equipment.purchaseDate,
+        warrantyExpiry: equipment.warrantyExpiry,
+        status: equipment.status,
+      });
+    }
+  }, [equipment]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    addEquipment(formData);
-    // Reset form and close dialog
-    setFormData({
-      name: '',
-      category: '',
-      department: '',
-      location: '',
-      model: '',
-      serialNumber: '',
-      purchaseDate: '',
-      warrantyExpiry: '',
-      status: 'active',
-      lastMaintenance: new Date().toISOString().split('T')[0],
+    if (!equipment) return;
+
+    updateEquipment(equipment.id, {
+      ...formData,
+      purchaseDate: formData.purchaseDate,
+      warrantyExpiry: formData.warrantyExpiry,
     });
+
     onOpenChange(false);
   };
+
+  if (!equipment) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Equipment</DialogTitle>
+          <DialogTitle>Edit Equipment</DialogTitle>
           <DialogDescription>
-            Enter the details of the new equipment to add to your inventory.
+            Update the details of the equipment.
           </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Equipment Name *</Label>
+              <Label htmlFor="edit-name">Equipment Name *</Label>
               <Input
-                id="name"
+                id="edit-name"
                 placeholder="e.g., CNC Machine #1"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -82,12 +95,12 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="category">Category *</Label>
+              <Label htmlFor="edit-category">Category *</Label>
               <Select
                 value={formData.category}
                 onValueChange={(value) => setFormData({ ...formData, category: value })}
               >
-                <SelectTrigger id="category">
+                <SelectTrigger id="edit-category">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -101,12 +114,12 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="department">Department *</Label>
+              <Label htmlFor="edit-department">Department *</Label>
               <Select
                 value={formData.department}
                 onValueChange={(value) => setFormData({ ...formData, department: value })}
               >
-                <SelectTrigger id="department">
+                <SelectTrigger id="edit-department">
                   <SelectValue placeholder="Select department" />
                 </SelectTrigger>
                 <SelectContent>
@@ -120,9 +133,9 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="location">Location *</Label>
+              <Label htmlFor="edit-location">Location *</Label>
               <Input
-                id="location"
+                id="edit-location"
                 placeholder="e.g., Building A - Floor 2"
                 value={formData.location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
@@ -131,9 +144,9 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="model">Model *</Label>
+              <Label htmlFor="edit-model">Model *</Label>
               <Input
-                id="model"
+                id="edit-model"
                 placeholder="e.g., Haas VF-2"
                 value={formData.model}
                 onChange={(e) => setFormData({ ...formData, model: e.target.value })}
@@ -142,9 +155,9 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="serialNumber">Serial Number *</Label>
+              <Label htmlFor="edit-serialNumber">Serial Number *</Label>
               <Input
-                id="serialNumber"
+                id="edit-serialNumber"
                 placeholder="e.g., SN-2023-001"
                 value={formData.serialNumber}
                 onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })}
@@ -153,9 +166,9 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="purchaseDate">Purchase Date *</Label>
+              <Label htmlFor="edit-purchaseDate">Purchase Date *</Label>
               <Input
-                id="purchaseDate"
+                id="edit-purchaseDate"
                 type="date"
                 value={formData.purchaseDate}
                 onChange={(e) => setFormData({ ...formData, purchaseDate: e.target.value })}
@@ -164,14 +177,30 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="warrantyExpiry">Warranty Expiry *</Label>
+              <Label htmlFor="edit-warrantyExpiry">Warranty Expiry *</Label>
               <Input
-                id="warrantyExpiry"
+                id="edit-warrantyExpiry"
                 type="date"
                 value={formData.warrantyExpiry}
                 onChange={(e) => setFormData({ ...formData, warrantyExpiry: e.target.value })}
                 required
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-status">Status *</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(value: 'active' | 'scrapped') => setFormData({ ...formData, status: value })}
+              >
+                <SelectTrigger id="edit-status">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="scrapped">Scrapped</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -179,10 +208,11 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit">Add Equipment</Button>
+            <Button type="submit">Update Equipment</Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
   );
 }
+

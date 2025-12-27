@@ -4,11 +4,13 @@ import { Wrench, Mail, Lock } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { ForgotPasswordDialog } from '../components/forms/ForgotPasswordDialog';
 
 export function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,7 +72,13 @@ export function Login() {
                 <input type="checkbox" className="w-4 h-4 rounded border-gray-300" />
                 <span className="text-gray-600">Remember me</span>
               </label>
-              <a href="#" className="text-blue-600 hover:text-blue-700">Forgot password?</a>
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(true)}
+                className="text-blue-600 hover:text-blue-700"
+              >
+                Forgot password?
+              </button>
             </div>
 
             <Button type="submit" className="w-full h-11">
@@ -84,9 +92,11 @@ export function Login() {
         </div>
 
         <p className="text-center text-sm text-gray-500 mt-8">
-          © 2024 GearOfi. All rights reserved.
+        
         </p>
       </div>
+
+      <ForgotPasswordDialog open={showForgotPassword} onOpenChange={setShowForgotPassword} />
     </div>
   );
 }

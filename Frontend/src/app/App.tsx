@@ -10,6 +10,7 @@ import { Reports } from './pages/Reports';
 import { Sidebar } from './components/layout/Sidebar';
 import { BottomNav } from './components/layout/BottomNav';
 import { MobileHeader } from './components/layout/MobileHeader';
+import { EquipmentProvider } from './contexts/EquipmentContext';
 
 function MainLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -38,21 +39,23 @@ function MainLayout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/login" element={<Login />} />
-        
-        <Route path="/dashboard" element={<MainLayout><Dashboard /></MainLayout>} />
-        <Route path="/equipment" element={<MainLayout><EquipmentList /></MainLayout>} />
-        <Route path="/equipment/:id" element={<MainLayout><EquipmentDetail /></MainLayout>} />
-        <Route path="/maintenance" element={<MainLayout><Maintenance /></MainLayout>} />
-        <Route path="/maintenance/:id" element={<MainLayout><MaintenanceDetail /></MainLayout>} />
-        <Route path="/calendar" element={<MainLayout><Calendar /></MainLayout>} />
-        <Route path="/reports" element={<MainLayout><Reports /></MainLayout>} />
-        
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    </BrowserRouter>
+    <EquipmentProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Login />} />
+          <Route path="/login" element={<Login />} />
+          
+          <Route path="/dashboard" element={<MainLayout><Dashboard /></MainLayout>} />
+          <Route path="/equipment" element={<MainLayout><EquipmentList /></MainLayout>} />
+          <Route path="/equipment/:id" element={<MainLayout><EquipmentDetail /></MainLayout>} />
+          <Route path="/maintenance" element={<MainLayout><Maintenance /></MainLayout>} />
+          <Route path="/maintenance/:id" element={<MainLayout><MaintenanceDetail /></MainLayout>} />
+          <Route path="/calendar" element={<MainLayout><Calendar /></MainLayout>} />
+          <Route path="/reports" element={<MainLayout><Reports /></MainLayout>} />
+          
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </EquipmentProvider>
   );
 }

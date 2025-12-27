@@ -1,16 +1,39 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, FileText, History, Users, BarChart, Download, Eye } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowLeft, FileText, History, Users, BarChart, Download, Eye, Edit, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { equipment, maintenanceRequests } from '../data/mockData';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../components/ui/alert-dialog';
+import { EditEquipmentDialog } from '../components/forms/EditEquipmentDialog';
+import { useEquipment } from '../contexts/EquipmentContext';
+import { maintenanceRequests } from '../data/mockData';
 
 export function EquipmentDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { getEquipmentById, deleteEquipment } = useEquipment();
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   
-  const eq = equipment.find(e => e.id === id);
+  const eq = getEquipmentById(id || '');
   const history = maintenanceRequests.filter(r => r.equipmentId === id);
+
+  const handleDelete = () => {
+    if (id) {
+      deleteEquipment(id);
+      navigate('/equipment');
+    }
+  };
 
   if (!eq) {
     return (
@@ -36,6 +59,14 @@ export function EquipmentDetail() {
         }`}>
           {eq.status}
         </span>
+        <div className="flex gap-2">
+          <Button variant="outline" size="icon" onClick={() => setShowEditDialog(true)}>
+            <Edit className="w-4 h-4" />
+          </Button>
+          <Button variant="destructive" size="icon" onClick={() => setShowDeleteDialog(true)}>
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -212,6 +243,29 @@ export function EquipmentDetail() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <EditEquipmentDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        equipment={eq || null}
+      />
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the equipment
+              {eq && ` "${eq.name}"`} from the system.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
