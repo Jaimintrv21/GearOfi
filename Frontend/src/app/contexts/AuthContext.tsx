@@ -13,12 +13,14 @@ interface AuthContextType {
   signup: (email: string, password: string, fullName: string) => Promise<boolean>;
   logout: () => void;
   isAuthenticated: boolean;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Load user from localStorage on mount
   useEffect(() => {
@@ -26,6 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (savedUser) {
       setUser(JSON.parse(savedUser));
     }
+    setIsLoading(false);
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
@@ -37,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       fullName: email.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'User',
       avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
     };
-    
+
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
     return true;
@@ -52,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       fullName: fullName,
       avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
     };
-    
+
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
     return true;
@@ -70,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signup,
       logout,
       isAuthenticated: !!user,
+      isLoading,
     }}>
       {children}
     </AuthContext.Provider>
