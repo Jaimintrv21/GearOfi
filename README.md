@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🛡️ GearGuard
+# 🛡️ GearOfi
 ### Intelligent Maintenance Management System (CMMS)
 
 [![React](https://img.shields.io/badge/Frontend-React_18-61DAFB?style=for-the-badge&logo=react)](https://react.dev/)
