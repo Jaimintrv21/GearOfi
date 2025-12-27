@@ -139,10 +139,10 @@ GearGuard/
 
 | Name | Role | GitHub |
 |------|------|--------|
-**[Jaimin Trivedi]** | [front-end, database ] | [@Jaimintrv21](https://github.com/Jaimintrv21) |
-| **[HItesh Kumar]** | [back-end] | [@hitesh-kumar123](https://github.com/hitesh-kumar123) |
-| **[Shriyansh]** | [debugger and problem solving] | [@shriyansh121](https://github.com/Mformann) |
-| **[Mann]** | [ documentation and  tester ] | [@Mformann](https://github.com/shriyansh121) |
+**Jaimin Trivedi** | front-end, database  | [@Jaimintrv21](https://github.com/Jaimintrv21) |
+| **HItesh Kumar** | back-end | [@hitesh-kumar123](https://github.com/hitesh-kumar123) |
+| **Shriyansh** | debugger and problem solving | [@shriyansh121](https://github.com/Mformann) |
+| **Mann** |  documentation and  tester | [@Mformann](https://github.com/shriyansh121) |
 
 ---
 
