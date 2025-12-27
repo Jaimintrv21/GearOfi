@@ -3,13 +3,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 import uuid
 
-from .models import (
+from models import (
     MaintenanceTeam, MaintenanceTeamBase, 
     Equipment, EquipmentBase,
     MaintenanceRequest, MaintenanceRequestBase, RequestState
 )
-from .database import db
-from .services import Service
+from database import db
+from services import Service
 
 app = FastAPI(title="GearGuard Backend", version="1.0")
 
@@ -62,6 +62,10 @@ def update_request_state(req_id: str, state: RequestState):
     """
     return Service.change_state(req_id, state)
 
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
 @app.get("/")
 def home():
     return {"message": "GearGuard Backend is Running. usage: /docs for swagger"}
@@ -69,4 +73,5 @@ def home():
 if __name__ == "__main__":
     import uvicorn
     print("Starting GearGuard Backend...")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # Using 127.0.0.1 is safer for Windows local development
+    uvicorn.run(app, host="127.0.0.1", port=8000)

@@ -1,4 +1,4 @@
-# GearGuard - Maintenance Management System
+# GearO5 - Maintenance Management System
 
 This project contains a **React Frontend** and a standalone **FastAPI Backend**.
 (The Odoo backend is deprecated).

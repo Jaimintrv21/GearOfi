@@ -1,5 +1,5 @@
 from typing import Dict
-from .models import Equipment, MaintenanceTeam, MaintenanceRequest
+from models import Equipment, MaintenanceTeam, MaintenanceRequest
 
 # In-memory storage
 db = {

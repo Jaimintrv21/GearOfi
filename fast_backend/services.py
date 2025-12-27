@@ -1,6 +1,6 @@
 from fastapi import HTTPException
-from .database import db, get_team, get_equipment
-from .models import MaintenanceRequestBase, MaintenanceRequest, RequestType, RequestState
+from database import db, get_team, get_equipment
+from models import MaintenanceRequestBase, MaintenanceRequest, RequestType, RequestState
 import uuid
 
 class Service:
