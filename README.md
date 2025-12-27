@@ -148,6 +148,6 @@ GearGuard/
 
 <div align="center"
 
-Built with ❤️ by the GearGuard Team
+Built with ❤️ by the GearOfi Team
 
 </div>
