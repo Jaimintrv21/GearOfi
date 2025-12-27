@@ -3,10 +3,16 @@
 export interface Equipment {
   id: string;
   name: string;
+  category: string;
   department: string;
   location: string;
-  status?: string;
+  model: string;
+  status: string;
   serialNumber: string;
+  purchaseDate: string;
+  warrantyExpiry: string;
+  lastMaintenance: string;
+  documents: any[];
   is_scrapped?: boolean; // match backend
   // Computed for frontend display
   maintenance_team_id?: string;
@@ -18,7 +24,7 @@ export interface MaintenanceRequest {
   equipment_id: string;
   equipmentName?: string; // Enhanced by frontend
   status?: string; // backend uses 'state'
-  state?: string; 
+  state?: string;
   request_type: string;
   scheduled_date?: string;
   technician?: string;

@@ -46,32 +46,32 @@ export function EquipmentList() {
     warrantyExpiryTo: '',
   });
 
-  const categories = [...new Set(equipment.map(e => e.category))];
+
 
   const filteredEquipment = equipment.filter(eq => {
-    const matchesSearch = searchTerm === '' || 
+    const matchesSearch = searchTerm === '' ||
       eq.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       eq.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
       eq.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
       eq.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
       eq.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
       eq.serialNumber.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesCategory = categoryFilter === 'all' || eq.category === categoryFilter;
     const matchesStatus = statusFilter === 'all' || eq.status === statusFilter;
     const matchesDepartment = moreFilters.department === 'all' || eq.department === moreFilters.department;
     const matchesLocation = moreFilters.location === 'all' || eq.location === moreFilters.location;
-    
-    const matchesPurchaseDate = 
+
+    const matchesPurchaseDate =
       (!moreFilters.purchaseDateFrom || new Date(eq.purchaseDate) >= new Date(moreFilters.purchaseDateFrom)) &&
       (!moreFilters.purchaseDateTo || new Date(eq.purchaseDate) <= new Date(moreFilters.purchaseDateTo));
-    
-    const matchesWarrantyExpiry = 
+
+    const matchesWarrantyExpiry =
       (!moreFilters.warrantyExpiryFrom || new Date(eq.warrantyExpiry) >= new Date(moreFilters.warrantyExpiryFrom)) &&
       (!moreFilters.warrantyExpiryTo || new Date(eq.warrantyExpiry) <= new Date(moreFilters.warrantyExpiryTo));
-    
-    return matchesSearch && matchesCategory && matchesStatus && matchesDepartment && 
-           matchesLocation && matchesPurchaseDate && matchesWarrantyExpiry;
+
+    return matchesSearch && matchesCategory && matchesStatus && matchesDepartment &&
+      matchesLocation && matchesPurchaseDate && matchesWarrantyExpiry;
   });
 
   const handleEdit = (e: React.MouseEvent, equipmentId: string) => {
@@ -134,9 +134,11 @@ export function EquipmentList() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
-                {categories.map(cat => (
-                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                ))}
+                <SelectItem value="Manufacturing">Manufacturing</SelectItem>
+                <SelectItem value="HVAC">HVAC</SelectItem>
+                <SelectItem value="Material Handling">Material Handling</SelectItem>
+                <SelectItem value="Office Equipment">Office Equipment</SelectItem>
+                <SelectItem value="Other">Other</SelectItem>
               </SelectContent>
             </Select>
 
@@ -154,14 +156,14 @@ export function EquipmentList() {
             <Button variant="outline" className="w-full" onClick={() => setShowMoreFilters(true)}>
               <Filter className="w-4 h-4 mr-2" />
               More Filters
-              {(moreFilters.department !== 'all' || 
-                moreFilters.location !== 'all' || 
-                moreFilters.purchaseDateFrom || 
-                moreFilters.purchaseDateTo || 
-                moreFilters.warrantyExpiryFrom || 
+              {(moreFilters.department !== 'all' ||
+                moreFilters.location !== 'all' ||
+                moreFilters.purchaseDateFrom ||
+                moreFilters.purchaseDateTo ||
+                moreFilters.warrantyExpiryFrom ||
                 moreFilters.warrantyExpiryTo) && (
-                <span className="ml-2 h-2 w-2 rounded-full bg-blue-600"></span>
-              )}
+                  <span className="ml-2 h-2 w-2 rounded-full bg-blue-600"></span>
+                )}
             </Button>
           </div>
 
@@ -183,42 +185,41 @@ export function EquipmentList() {
                       <h3 className="font-semibold text-lg text-gray-900 mb-1 truncate">{eq.name}</h3>
                       <p className="text-sm text-gray-600">{eq.model}</p>
                     </div>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ml-2 ${
-                      eq.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                    }`}>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ml-2 ${eq.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                      }`}>
                       {eq.status}
                     </span>
                   </div>
 
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Category:</span>
-                    <span className="font-medium text-gray-900">{eq.category}</span>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Category:</span>
+                      <span className="font-medium text-gray-900">{eq.category}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Location:</span>
+                      <span className="font-medium text-gray-900 truncate ml-2">{eq.location}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Department:</span>
+                      <span className="font-medium text-gray-900">{eq.department}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Last Maintenance:</span>
+                      <span className="font-medium text-gray-900">
+                        {new Date(eq.lastMaintenance).toLocaleDateString()}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Location:</span>
-                    <span className="font-medium text-gray-900 truncate ml-2">{eq.location}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Department:</span>
-                    <span className="font-medium text-gray-900">{eq.department}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Last Maintenance:</span>
-                    <span className="font-medium text-gray-900">
-                      {new Date(eq.lastMaintenance).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
 
-                <div className="mt-4 pt-4 border-t">
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span>S/N: {eq.serialNumber}</span>
-                    <span>{eq.documents.length} docs</span>
+                  <div className="mt-4 pt-4 border-t">
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span>S/N: {eq.serialNumber}</span>
+                      <span>{eq.documents.length} docs</span>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
             </Link>
             {/* Action Buttons */}
             <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -250,7 +251,7 @@ export function EquipmentList() {
           </CardContent>
         </Card>
       )}
-      
+
       <AddEquipmentDialog open={showAddDialog} onOpenChange={setShowAddDialog} />
       <EditEquipmentDialog
         open={showEditDialog}

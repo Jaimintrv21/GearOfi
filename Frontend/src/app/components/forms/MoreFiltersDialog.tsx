@@ -53,7 +53,7 @@ export function MoreFiltersDialog({
     setLocalFilters(filters);
   }, [filters]);
 
-  const departments = [...new Set(equipment.map(e => e.department))];
+
   const locations = [...new Set(equipment.map(e => e.location))];
 
   const handleApply = () => {
@@ -99,11 +99,11 @@ export function MoreFiltersDialog({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Departments</SelectItem>
-                  {departments.map((dept) => (
-                    <SelectItem key={dept} value={dept}>
-                      {dept}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="Production">Production</SelectItem>
+                  <SelectItem value="Facilities">Facilities</SelectItem>
+                  <SelectItem value="Warehouse">Warehouse</SelectItem>
+                  <SelectItem value="Administration">Administration</SelectItem>
+                  <SelectItem value="IT">IT</SelectItem>
                 </SelectContent>
               </Select>
             </div>
