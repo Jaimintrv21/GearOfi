@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Login } from './pages/Login';
+import { Signup } from './pages/Signup';
 import { Dashboard } from './pages/Dashboard';
 import { EquipmentList } from './pages/EquipmentList';
 import { EquipmentDetail } from './pages/EquipmentDetail';
@@ -10,6 +11,18 @@ import { Reports } from './pages/Reports';
 import { Sidebar } from './components/layout/Sidebar';
 import { BottomNav } from './components/layout/BottomNav';
 import { MobileHeader } from './components/layout/MobileHeader';
+import { EquipmentProvider } from './contexts/EquipmentContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated } = useAuth();
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return <>{children}</>;
+}
 
 function MainLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -38,21 +51,75 @@ function MainLayout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/login" element={<Login />} />
-        
-        <Route path="/dashboard" element={<MainLayout><Dashboard /></MainLayout>} />
-        <Route path="/equipment" element={<MainLayout><EquipmentList /></MainLayout>} />
-        <Route path="/equipment/:id" element={<MainLayout><EquipmentDetail /></MainLayout>} />
-        <Route path="/maintenance" element={<MainLayout><Maintenance /></MainLayout>} />
-        <Route path="/maintenance/:id" element={<MainLayout><MaintenanceDetail /></MainLayout>} />
-        <Route path="/calendar" element={<MainLayout><Calendar /></MainLayout>} />
-        <Route path="/reports" element={<MainLayout><Reports /></MainLayout>} />
-        
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    </BrowserRouter>
+    <AuthProvider>
+      <EquipmentProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <MainLayout><Dashboard /></MainLayout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/equipment" 
+              element={
+                <ProtectedRoute>
+                  <MainLayout><EquipmentList /></MainLayout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/equipment/:id" 
+              element={
+                <ProtectedRoute>
+                  <MainLayout><EquipmentDetail /></MainLayout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/maintenance" 
+              element={
+                <ProtectedRoute>
+                  <MainLayout><Maintenance /></MainLayout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/maintenance/:id" 
+              element={
+                <ProtectedRoute>
+                  <MainLayout><MaintenanceDetail /></MainLayout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/calendar" 
+              element={
+                <ProtectedRoute>
+                  <MainLayout><Calendar /></MainLayout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/reports" 
+              element={
+                <ProtectedRoute>
+                  <MainLayout><Reports /></MainLayout>
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </EquipmentProvider>
+    </AuthProvider>
   );
 }
