@@ -135,7 +135,18 @@ GearGuard/
 
 ---
 
-<div align="center">
+## 🏆 Hackathon Team
+
+| Name | Role | GitHub |
+|------|------|--------|
+**[Jaimin Trivedi]** | [front-end, database ] | [@Jaimintrv21](https://github.com/) |
+| **[HItesh Kumar]** | [back-end] | [@hitesh-kumar123](https://github.com/) |
+| **[Shriyansh]** | [debugger and problem solving] | [@shriyansh121](https://github.com/) |
+| **[Mann]** | [ documentation and  tester ] | [@Mformann](https://github.com/) |
+
+---
+
+<div align="center"
 
 Built with ❤️ by the GearGuard Team
 
