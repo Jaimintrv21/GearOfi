@@ -20,12 +20,12 @@ import { NewRequestDialog } from '../components/forms/NewRequestDialog';
 
 const ITEM_TYPE = 'MAINTENANCE_CARD';
 
-// Backend state mapping
+// Backend state mapping (Matches schema.sql Enum values)
 const statusColumns = [
-  { id: 'new', title: 'New', color: 'bg-blue-100 border-blue-300' },
-  { id: 'in_progress', title: 'In Progress', color: 'bg-orange-100 border-orange-300' },
-  { id: 'repaired', title: 'Repaired', color: 'bg-green-100 border-green-300' },
-  { id: 'scrap', title: 'Scrap', color: 'bg-red-100 border-red-300' },
+  { id: 'New', title: 'New', color: 'bg-blue-100 border-blue-300' },
+  { id: 'In Progress', title: 'In Progress', color: 'bg-orange-100 border-orange-300' },
+  { id: 'Repaired', title: 'Repaired', color: 'bg-green-100 border-green-300' },
+  { id: 'Scrap', title: 'Scrap', color: 'bg-red-100 border-red-300' },
 ] as const;
 
 interface DraggableCardProps {
@@ -35,27 +35,26 @@ interface DraggableCardProps {
 function DraggableCard({ request }: DraggableCardProps) {
   const [{ isDragging }, drag] = useDrag({
     type: ITEM_TYPE,
-    item: { id: request.id, status: request.state },
+    item: { id: request.id, status: request.stage },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
   });
 
-  const isOverdue = request.scheduled_date && new Date(request.scheduled_date) < new Date() && request.state !== 'repaired' && request.state !== 'scrap';
-  
+  const isOverdue = request.scheduled_date && new Date(request.scheduled_date) < new Date() && request.stage !== 'Repaired' && request.stage !== 'Scrap';
+
   return (
     <div
       ref={(node) => { if (node) drag(node); }}
-      className={`bg-white rounded-lg border p-4 shadow-sm hover:shadow-md transition-shadow cursor-move ${
-        isDragging ? 'opacity-50' : ''
-      }`}
+      className={`bg-white rounded-lg border p-4 shadow-sm hover:shadow-md transition-shadow cursor-move ${isDragging ? 'opacity-50' : ''
+        }`}
     >
       <div className="space-y-3">
         <div className="flex items-start justify-between gap-2">
           <h4 className="font-medium text-gray-900 line-clamp-2">{request.subject}</h4>
           {/* Mock priority for now as backend doesn't store simple priority string yet */}
           <span className={`px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap bg-blue-100 text-blue-700`}>
-             {request.request_type}
+            {request.req_type}
           </span>
         </div>
 
@@ -69,12 +68,12 @@ function DraggableCard({ request }: DraggableCardProps) {
           {isOverdue && <AlertCircle className="w-3 h-3 text-red-600" />}
         </div>
 
-        {request.technician && (
+        {request.technician_id && (
           <div className="flex items-center gap-2">
             <Avatar className="w-6 h-6">
-              <AvatarFallback>{request.technician[0]}</AvatarFallback>
+              <AvatarFallback>T{request.technician_id}</AvatarFallback>
             </Avatar>
-            <span className="text-xs text-gray-600">{request.technician}</span>
+            <span className="text-xs text-gray-600">Tech #{request.technician_id}</span>
           </div>
         )}
       </div>
@@ -116,14 +115,13 @@ function DroppableColumn({ status, requests, onMove }: DroppableColumnProps) {
         <div className="space-y-3">
           {requests.map((request) => (
             <div key={request.id}>
-               <DraggableCard request={request} />
+              <DraggableCard request={request} />
             </div>
           ))}
 
           {requests.length === 0 && (
-            <div className={`p-8 text-center text-gray-400 border-2 border-dashed rounded-lg ${
-              isOver ? 'border-gray-400 bg-white' : 'border-gray-200'
-            }`}>
+            <div className={`p-8 text-center text-gray-400 border-2 border-dashed rounded-lg ${isOver ? 'border-gray-400 bg-white' : 'border-gray-200'
+              }`}>
               {isOver ? 'Drop here' : 'No items'}
             </div>
           )}
@@ -140,30 +138,30 @@ export function Maintenance() {
   const [showNewRequestDialog, setShowNewRequestDialog] = useState(false);
 
   const loadRequests = async () => {
-      try {
-          const data = await api.fetchRequests();
-          setRequests(data);
-      } catch(e) {
-          console.error(e);
-      }
+    try {
+      const data = await api.fetchRequests();
+      setRequests(data);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   useEffect(() => {
-      loadRequests();
+    loadRequests();
   }, []);
 
   const handleMove = async (id: string, newStatus: string) => {
-    if (newStatus === 'scrap') {
+    if (newStatus === 'Scrap') {
       setPendingMove({ id, newStatus });
       setShowScrapDialog(true);
     } else {
       // Optimistic update
       setRequests(prev =>
-        prev.map(req => req.id === id ? { ...req, state: newStatus } : req)
+        prev.map(req => req.id === id ? { ...req, stage: newStatus } : req)
       );
       // API call
       try {
-        await api.updateRequestState(id, newStatus);
+        await api.updateRequestStage(id, newStatus);
       } catch (err) {
         console.error("Failed to update status", err);
         loadRequests(); // Revert on failure
@@ -176,12 +174,12 @@ export function Maintenance() {
       const { id } = pendingMove;
       // Optimistic
       setRequests(prev =>
-        prev.map(req => req.id === id ? { ...req, state: 'scrap' } : req)
+        prev.map(req => req.id === id ? { ...req, stage: 'Scrap' } : req)
       );
       try {
-        await api.updateRequestState(id, 'scrap');
+        await api.updateRequestStage(id, 'Scrap');
       } catch (err) {
-         loadRequests();
+        loadRequests();
       }
       setShowScrapDialog(false);
       setPendingMove(null);
@@ -214,7 +212,7 @@ export function Maintenance() {
             <DroppableColumn
               key={column.id}
               status={column}
-              requests={requests.filter(r => (r.state || 'new') === column.id)}
+              requests={requests.filter(r => (r.stage || 'New') === column.id)}
               onMove={handleMove}
             />
           ))}
@@ -223,7 +221,7 @@ export function Maintenance() {
         {/* Mobile: List View */}
         <div className="lg:hidden space-y-4">
           {statusColumns.map((column) => {
-            const columnRequests = requests.filter(r => (r.state || 'new') === column.id);
+            const columnRequests = requests.filter(r => (r.stage || 'New') === column.id);
             if (columnRequests.length === 0) return null;
 
             return (
@@ -239,7 +237,7 @@ export function Maintenance() {
                 <CardContent className="space-y-3">
                   {columnRequests.map((request) => (
                     <div key={request.id} className="bg-gray-50 rounded-lg p-4 border">
-                        <DraggableCard request={request} />
+                      <DraggableCard request={request} />
                     </div>
                   ))}
                 </CardContent>
@@ -265,10 +263,10 @@ export function Maintenance() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-        
+
         <NewRequestDialog open={showNewRequestDialog} onOpenChange={(open) => {
-            setShowNewRequestDialog(open);
-            if(!open) loadRequests();
+          setShowNewRequestDialog(open);
+          if (!open) loadRequests();
         }} />
       </div>
     </DndProvider>

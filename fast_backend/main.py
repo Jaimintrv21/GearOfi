@@ -48,9 +48,9 @@ def create_request(req: schemas.MaintenanceRequestCreate, db: Session = Depends(
 def read_requests(db: Session = Depends(get_db)):
     return Service.get_requests(db)
 
-@app.put("/requests/{req_id}/state", response_model=schemas.MaintenanceRequest)
-def start_request(req_id: int, state: schemas.RequestState, db: Session = Depends(get_db)):
-    return Service.change_state(db, req_id, state)
+@app.put("/requests/{req_id}/stage", response_model=schemas.MaintenanceRequest)
+def update_request_stage(req_id: int, stage: schemas.RequestStage, db: Session = Depends(get_db)):
+    return Service.change_stage(db, req_id, stage)
 
 @app.get("/health")
 def health_check():
@@ -58,10 +58,10 @@ def health_check():
 
 @app.get("/")
 def home():
-    return {"message": "GearGuard Backend is Running (PostgreSQL Connected). usage: /docs for swagger"}
+    return {"message": "GearGuard Backend is Running (SQLite). usage: /docs for swagger"}
 
 if __name__ == "__main__":
     import uvicorn
-    print("Starting GearGuard Backend with Postgres...")
     # Using 127.0.0.1 is safer for Windows local development
     uvicorn.run(app, host="127.0.0.1", port=8000)
+

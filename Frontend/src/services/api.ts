@@ -24,7 +24,7 @@ export const api = {
     if (!res.ok) throw new Error('Failed to fetch teams');
     return res.json();
   },
-  
+
   createTeam: async (data: any) => {
     const res = await fetch(`${API_URL}/teams/`, {
       method: 'POST',
@@ -48,17 +48,17 @@ export const api = {
       body: JSON.stringify(data),
     });
     if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.detail || 'Failed to create request');
+      const err = await res.json();
+      throw new Error(err.detail || 'Failed to create request');
     }
     return res.json();
   },
 
-  updateRequestState: async (id: string, state: string) => {
-    const res = await fetch(`${API_URL}/requests/${id}/state?state=${state}`, {
+  updateRequestStage: async (id: string, stage: string) => {
+    const res = await fetch(`${API_URL}/requests/${id}/stage?stage=${stage}`, {
       method: 'PUT',
     });
-    if (!res.ok) throw new Error('Failed to update state');
+    if (!res.ok) throw new Error('Failed to update stage');
     return res.json();
   },
 };

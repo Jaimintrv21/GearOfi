@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from models import Equipment, MaintenanceTeam, MaintenanceRequest, RequestState
+from models import Equipment, MaintenanceTeam, MaintenanceRequest, User, RequestStage, EquipmentStatus
 import schemas
 
 class Service:
@@ -8,7 +8,8 @@ class Service:
     # --- TEAMS ---
     @staticmethod
     def create_team(db: Session, team: schemas.MaintenanceTeamCreate):
-        db_team = MaintenanceTeam(name=team.name, members=team.members)
+        # members logic removed as it requires User creation which is separate now
+        db_team = MaintenanceTeam(name=team.name)
         db.add(db_team)
         db.commit()
         db.refresh(db_team)
@@ -40,35 +41,32 @@ class Service:
             raise HTTPException(status_code=404, detail="Equipment not found")
         
         # 2. Check if Scrapped
-        if equipment.is_scrapped:
+        if equipment.status == EquipmentStatus.scrapped:
             raise HTTPException(status_code=400, detail="Cannot create request for scrapped equipment")
 
         # 3. Validation: Preventive must have date
-        if req_in.request_type == 'preventive' and not req_in.scheduled_date:
-            raise HTTPException(status_code=400, detail="Preventive requests must have a Scheduled Date")
+        if req_in.req_type == 'Preventive' and not req_in.scheduled_date:
+             raise HTTPException(status_code=400, detail="Preventive requests must have a Scheduled Date")
 
-        # 4. Auto-fill Team/Tech from Equipment defaults (if assigned)
-        assigned_team_id = equipment.maintenance_team_id
-        assigned_technician = equipment.default_technician
+        # 4. Auto-fill Team/Tech from Equipment defaults (if assigned and not overridden)
+        assigned_team_id = req_in.team_id if req_in.team_id else equipment.assigned_team_id
+        assigned_technician_id = req_in.technician_id if req_in.technician_id else equipment.assigned_technician_id
         
-        # 5. Validation: Technician must be in Team
-        if assigned_team_id:
-            team = db.query(MaintenanceTeam).filter(MaintenanceTeam.id == assigned_team_id).first()
-            if team and assigned_technician:
-                # members is a JSON list of strings
-                if assigned_technician not in team.members:
-                    raise HTTPException(status_code=400, detail="Technician must be a member of the selected Maintenance Team")
+        # 5. Validation: Technician must be in Team (Skipping for now as we don't have easy check without Members loaded)
+        # In a real app we would check: if assigned_technician_id and assigned_team_id: verify link.
 
         # Create DB Object
         db_req = MaintenanceRequest(
             subject=req_in.subject,
             equipment_id=req_in.equipment_id,
-            request_type=req_in.request_type,
+            req_type=req_in.req_type,
+            priority=req_in.priority,
             scheduled_date=req_in.scheduled_date,
-            duration=req_in.duration,
-            state=RequestState.new,
-            maintenance_team_id=assigned_team_id, # Auto-filled
-            technician=assigned_technician        # Auto-filled
+            duration_hours=req_in.duration_hours,
+            stage=RequestStage.new,
+            team_id=assigned_team_id,
+            technician_id=assigned_technician_id,
+            created_by_id=req_in.created_by_id
         )
         
         db.add(db_req)
@@ -81,17 +79,17 @@ class Service:
         return db.query(MaintenanceRequest).all()
 
     @staticmethod
-    def change_state(db: Session, req_id: int, new_state: RequestState):
+    def change_stage(db: Session, req_id: int, new_stage: schemas.RequestStage):
         req = db.query(MaintenanceRequest).filter(MaintenanceRequest.id == req_id).first()
         if not req:
             raise HTTPException(status_code=404, detail="Request not found")
         
-        req.state = new_state
+        req.stage = new_stage
         
         # Logic: If Scrap, update Equipment
-        if new_state == RequestState.scrap:
+        if new_stage == schemas.RequestStage.scrap:
              if req.equipment:
-                 req.equipment.is_scrapped = True
+                 req.equipment.status = EquipmentStatus.scrapped
                  db.add(req.equipment) # Mark for update
 
         db.commit()

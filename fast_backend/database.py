@@ -5,12 +5,24 @@ import os
 
 # Default to local postgres. Override with env var if needed.
 # Format: postgresql://user:password@host/dbname
-SQLALCHEMY_DATABASE_URL = os.getenv(
-    "DATABASE_URL", 
-    "postgresql://postgres:123456@localhost:5432/gearguard_db"
-)
+# SQLALCHEMY_DATABASE_URL = os.getenv(
+#     "DATABASE_URL", 
+#     "postgresql://postgres:123456@localhost:5432/gearguard_db"
+# )
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+# Default to local postgres. Override with env var if needed.
+# Format: postgresql://user:password@host/dbname
+# SQLALCHEMY_DATABASE_URL = os.getenv(
+#     "DATABASE_URL", 
+#     "postgresql://postgres:123456@localhost:5432/gearguard_db"
+# )
+
+# Fallback to SQLite (as per README 'in-memory' promise or just for easy local dev)
+SQLALCHEMY_DATABASE_URL = "sqlite:///./gearguard_v2.db"
+
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
