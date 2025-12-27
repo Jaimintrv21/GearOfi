@@ -1,12 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { Link } from 'react-router-dom';
-import { Plus, Calendar, User, Paperclip, AlertCircle } from 'lucide-react';
+import { Plus, Calendar, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { maintenanceRequests as initialRequests, MaintenanceRequest } from '../data/mockData';
-import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
+import { Avatar, AvatarFallback } from '../components/ui/avatar';
+import { api } from '../../services/api';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,74 +20,61 @@ import { NewRequestDialog } from '../components/forms/NewRequestDialog';
 
 const ITEM_TYPE = 'MAINTENANCE_CARD';
 
+// Backend state mapping
 const statusColumns = [
   { id: 'new', title: 'New', color: 'bg-blue-100 border-blue-300' },
-  { id: 'in-progress', title: 'In Progress', color: 'bg-orange-100 border-orange-300' },
+  { id: 'in_progress', title: 'In Progress', color: 'bg-orange-100 border-orange-300' },
   { id: 'repaired', title: 'Repaired', color: 'bg-green-100 border-green-300' },
   { id: 'scrap', title: 'Scrap', color: 'bg-red-100 border-red-300' },
 ] as const;
 
 interface DraggableCardProps {
-  request: MaintenanceRequest;
-  onMove: (id: string, newStatus: string) => void;
+  request: any;
 }
 
-function DraggableCard({ request, onMove }: DraggableCardProps) {
+function DraggableCard({ request }: DraggableCardProps) {
   const [{ isDragging }, drag] = useDrag({
     type: ITEM_TYPE,
-    item: { id: request.id, status: request.status },
+    item: { id: request.id, status: request.state },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
   });
 
-  const priorityColors = {
-    low: 'bg-gray-100 text-gray-700',
-    medium: 'bg-yellow-100 text-yellow-700',
-    high: 'bg-red-100 text-red-700',
-  };
-
-  const isOverdue = new Date(request.dueDate) < new Date() && request.status !== 'repaired' && request.status !== 'scrap';
-
+  const isOverdue = request.scheduled_date && new Date(request.scheduled_date) < new Date() && request.state !== 'repaired' && request.state !== 'scrap';
+  
   return (
     <div
-      ref={drag}
+      ref={(node) => { if (node) drag(node); }}
       className={`bg-white rounded-lg border p-4 shadow-sm hover:shadow-md transition-shadow cursor-move ${
         isDragging ? 'opacity-50' : ''
       }`}
     >
       <div className="space-y-3">
         <div className="flex items-start justify-between gap-2">
-          <h4 className="font-medium text-gray-900 line-clamp-2">{request.title}</h4>
-          <span className={`px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${priorityColors[request.priority]}`}>
-            {request.priority}
+          <h4 className="font-medium text-gray-900 line-clamp-2">{request.subject}</h4>
+          {/* Mock priority for now as backend doesn't store simple priority string yet */}
+          <span className={`px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap bg-blue-100 text-blue-700`}>
+             {request.request_type}
           </span>
         </div>
 
-        <p className="text-sm text-gray-600 line-clamp-2">{request.equipmentName}</p>
+        <p className="text-sm text-gray-600 line-clamp-2">Equip ID: {request.equipment_id}</p>
 
         <div className="flex items-center gap-2 text-xs text-gray-500">
           <Calendar className="w-3 h-3" />
           <span className={isOverdue ? 'text-red-600 font-medium' : ''}>
-            {new Date(request.dueDate).toLocaleDateString()}
+            {request.scheduled_date ? new Date(request.scheduled_date).toLocaleDateString() : 'No Date'}
           </span>
           {isOverdue && <AlertCircle className="w-3 h-3 text-red-600" />}
         </div>
 
-        {request.assignedTo && (
+        {request.technician && (
           <div className="flex items-center gap-2">
             <Avatar className="w-6 h-6">
-              <AvatarImage src={request.assignedToAvatar} />
-              <AvatarFallback>{request.assignedTo[0]}</AvatarFallback>
+              <AvatarFallback>{request.technician[0]}</AvatarFallback>
             </Avatar>
-            <span className="text-xs text-gray-600">{request.assignedTo}</span>
-          </div>
-        )}
-
-        {request.attachments.length > 0 && (
-          <div className="flex items-center gap-1 text-xs text-gray-500">
-            <Paperclip className="w-3 h-3" />
-            <span>{request.attachments.length}</span>
+            <span className="text-xs text-gray-600">{request.technician}</span>
           </div>
         )}
       </div>
@@ -98,7 +84,7 @@ function DraggableCard({ request, onMove }: DraggableCardProps) {
 
 interface DroppableColumnProps {
   status: typeof statusColumns[number];
-  requests: MaintenanceRequest[];
+  requests: any[];
   onMove: (id: string, newStatus: string) => void;
 }
 
@@ -116,10 +102,10 @@ function DroppableColumn({ status, requests, onMove }: DroppableColumnProps) {
   });
 
   return (
-    <div ref={drop} className="flex-1 min-w-0">
+    <div ref={(node) => { if (node) drop(node); }} className="flex-1 min-w-0">
       <div className={`rounded-lg border-2 ${status.color} p-3 min-h-[600px]`}>
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
+          <div className="flex-1 flex items-center gap-2">
             <h3 className="font-semibold text-gray-900">{status.title}</h3>
             <span className="px-2 py-0.5 bg-white rounded-full text-xs font-medium text-gray-700">
               {requests.length}
@@ -129,9 +115,9 @@ function DroppableColumn({ status, requests, onMove }: DroppableColumnProps) {
 
         <div className="space-y-3">
           {requests.map((request) => (
-            <Link key={request.id} to={`/maintenance/${request.id}`}>
-              <DraggableCard request={request} onMove={onMove} />
-            </Link>
+            <div key={request.id}>
+               <DraggableCard request={request} />
+            </div>
           ))}
 
           {requests.length === 0 && (
@@ -148,27 +134,55 @@ function DroppableColumn({ status, requests, onMove }: DroppableColumnProps) {
 }
 
 export function Maintenance() {
-  const [requests, setRequests] = useState<MaintenanceRequest[]>(initialRequests);
+  const [requests, setRequests] = useState<any[]>([]);
   const [showScrapDialog, setShowScrapDialog] = useState(false);
   const [pendingMove, setPendingMove] = useState<{ id: string; newStatus: string } | null>(null);
   const [showNewRequestDialog, setShowNewRequestDialog] = useState(false);
 
-  const handleMove = (id: string, newStatus: string) => {
+  const loadRequests = async () => {
+      try {
+          const data = await api.fetchRequests();
+          setRequests(data);
+      } catch(e) {
+          console.error(e);
+      }
+  };
+
+  useEffect(() => {
+      loadRequests();
+  }, []);
+
+  const handleMove = async (id: string, newStatus: string) => {
     if (newStatus === 'scrap') {
       setPendingMove({ id, newStatus });
       setShowScrapDialog(true);
     } else {
+      // Optimistic update
       setRequests(prev =>
-        prev.map(req => req.id === id ? { ...req, status: newStatus as any } : req)
+        prev.map(req => req.id === id ? { ...req, state: newStatus } : req)
       );
+      // API call
+      try {
+        await api.updateRequestState(id, newStatus);
+      } catch (err) {
+        console.error("Failed to update status", err);
+        loadRequests(); // Revert on failure
+      }
     }
   };
 
-  const confirmScrap = () => {
+  const confirmScrap = async () => {
     if (pendingMove) {
+      const { id } = pendingMove;
+      // Optimistic
       setRequests(prev =>
-        prev.map(req => req.id === pendingMove.id ? { ...req, status: 'scrap' as any } : req)
+        prev.map(req => req.id === id ? { ...req, state: 'scrap' } : req)
       );
+      try {
+        await api.updateRequestState(id, 'scrap');
+      } catch (err) {
+         loadRequests();
+      }
       setShowScrapDialog(false);
       setPendingMove(null);
     }
@@ -200,7 +214,7 @@ export function Maintenance() {
             <DroppableColumn
               key={column.id}
               status={column}
-              requests={requests.filter(r => r.status === column.id)}
+              requests={requests.filter(r => (r.state || 'new') === column.id)}
               onMove={handleMove}
             />
           ))}
@@ -209,7 +223,7 @@ export function Maintenance() {
         {/* Mobile: List View */}
         <div className="lg:hidden space-y-4">
           {statusColumns.map((column) => {
-            const columnRequests = requests.filter(r => r.status === column.id);
+            const columnRequests = requests.filter(r => (r.state || 'new') === column.id);
             if (columnRequests.length === 0) return null;
 
             return (
@@ -224,11 +238,9 @@ export function Maintenance() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {columnRequests.map((request) => (
-                    <Link key={request.id} to={`/maintenance/${request.id}`}>
-                      <div className="bg-gray-50 rounded-lg p-4 border">
-                        <DraggableCard request={request} onMove={handleMove} />
-                      </div>
-                    </Link>
+                    <div key={request.id} className="bg-gray-50 rounded-lg p-4 border">
+                        <DraggableCard request={request} />
+                    </div>
                   ))}
                 </CardContent>
               </Card>
@@ -254,7 +266,10 @@ export function Maintenance() {
           </AlertDialogContent>
         </AlertDialog>
         
-        <NewRequestDialog open={showNewRequestDialog} onOpenChange={setShowNewRequestDialog} />
+        <NewRequestDialog open={showNewRequestDialog} onOpenChange={(open) => {
+            setShowNewRequestDialog(open);
+            if(!open) loadRequests();
+        }} />
       </div>
     </DndProvider>
   );
