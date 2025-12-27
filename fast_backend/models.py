@@ -1,55 +1,66 @@
-from pydantic import BaseModel
-from typing import List, Optional
-from datetime import date, datetime
-from enum import Enum
+from sqlalchemy import Column, Integer, String, Boolean, Date, Float, ForeignKey, Enum as SQLEnum, JSON
+from sqlalchemy.orm import relationship
+from database import Base
+import enum
 
-# Enums
-class RequestType(str, Enum):
-    CORRECTIVE = "corrective"
-    PREVENTIVE = "preventive"
+# Define Python Enums for SQLAlchemy
+class RequestType(str, enum.Enum):
+    corrective = 'corrective'
+    preventive = 'preventive'
 
-class RequestState(str, Enum):
-    NEW = "new"
-    IN_PROGRESS = "in_progress"
-    REPAIRED = "repaired"
-    SCRAP = "scrap"
+class RequestState(str, enum.Enum):
+    new = 'new'
+    in_progress = 'in_progress'
+    repaired = 'repaired'
+    scrap = 'scrap'
 
-# --- Maintenance Teams ---
-class MaintenanceTeamBase(BaseModel):
-    name: str
-    members: List[str]  # List of technician names
+class MaintenanceTeam(Base):
+    __tablename__ = "maintenance_teams"
 
-class MaintenanceTeam(MaintenanceTeamBase):
-    id: str
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True)
+    # Storing primitive list of strings as JSON
+    members = Column(JSON, default=[])
 
-# --- Equipment ---
-class EquipmentBase(BaseModel):
-    name: str
-    serial_number: str
-    department: str
-    employee: str  # Custodian
-    maintenance_team_id: str
-    default_technician: str  # Name of default tech
-    location: str
-    warranty_end_date: date
+    # Relationships
+    equipments = relationship("Equipment", back_populates="team")
+    requests = relationship("MaintenanceRequest", back_populates="team")
 
-class Equipment(EquipmentBase):
-    id: str
-    is_scrapped: bool = False
+class Equipment(Base):
+    __tablename__ = "equipments"
 
-# --- Maintenance Requests ---
-class MaintenanceRequestBase(BaseModel):
-    subject: str
-    equipment_id: str
-    request_type: RequestType
-    scheduled_date: Optional[datetime] = None
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    serial_number = Column(String, unique=True, index=True)
+    department = Column(String)
+    employee = Column(String, nullable=True)
+    location = Column(String, nullable=True)
+    is_scrapped = Column(Boolean, default=False)
     
-    # Optional because they can be auto-filled
-    maintenance_team_id: Optional[str] = None
-    technician: Optional[str] = None
-    duration: float = 0.0
+    # Auto-assignment fields
+    maintenance_team_id = Column(Integer, ForeignKey("maintenance_teams.id"), nullable=True)
+    default_technician = Column(String, nullable=True)
 
-class MaintenanceRequest(MaintenanceRequestBase):
-    id: str
-    state: RequestState = RequestState.NEW
-    created_at: datetime = datetime.now()
+    # Relationships
+    team = relationship("MaintenanceTeam", back_populates="equipments")
+    requests = relationship("MaintenanceRequest", back_populates="equipment")
+
+class MaintenanceRequest(Base):
+    __tablename__ = "maintenance_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    subject = Column(String)
+    
+    # Foreign Keys
+    equipment_id = Column(Integer, ForeignKey("equipments.id"))
+    maintenance_team_id = Column(Integer, ForeignKey("maintenance_teams.id"), nullable=True)
+    
+    technician = Column(String, nullable=True)
+    request_type = Column(SQLEnum(RequestType), default=RequestType.corrective)
+    scheduled_date = Column(Date, nullable=True)
+    duration = Column(Float, default=0.0)
+    state = Column(SQLEnum(RequestState), default=RequestState.new)
+
+    # Relationships
+    equipment = relationship("Equipment", back_populates="requests")
+    team = relationship("MaintenanceTeam", back_populates="requests")

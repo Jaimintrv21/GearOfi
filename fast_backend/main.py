@@ -1,66 +1,56 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List
-import uuid
+from sqlalchemy.orm import Session
 
-from models import (
-    MaintenanceTeam, MaintenanceTeamBase, 
-    Equipment, EquipmentBase,
-    MaintenanceRequest, MaintenanceRequestBase, RequestState
-)
-from database import db
+import models
+import schemas
+from database import engine, get_db
 from services import Service
+
+# Create Tables
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="GearGuard Backend", version="1.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# --- Teams ---
-@app.post("/teams/", response_model=MaintenanceTeam)
-def create_team(team: MaintenanceTeamBase):
-    new_team = MaintenanceTeam(id=str(uuid.uuid4()), **team.dict())
-    db["teams"][new_team.id] = new_team
-    return new_team
+# --- TEAMS ---
+@app.post("/teams/", response_model=schemas.MaintenanceTeam)
+def create_team(team: schemas.MaintenanceTeamCreate, db: Session = Depends(get_db)):
+    return Service.create_team(db, team)
 
-@app.get("/teams/", response_model=List[MaintenanceTeam])
-def list_teams():
-    return list(db["teams"].values())
+@app.get("/teams/", response_model=List[schemas.MaintenanceTeam])
+def read_teams(db: Session = Depends(get_db)):
+    return Service.get_teams(db)
 
-# --- Equipment ---
-@app.post("/equipment/", response_model=Equipment)
-def create_equipment(equip: EquipmentBase):
-    new_equip = Equipment(id=str(uuid.uuid4()), **equip.dict())
-    db["equipment"][new_equip.id] = new_equip
-    return new_equip
+# --- EQUIPMENT ---
+@app.post("/equipment/", response_model=schemas.Equipment)
+def create_equipment(eq: schemas.EquipmentCreate, db: Session = Depends(get_db)):
+    return Service.create_equipment(db, eq)
 
-@app.get("/equipment/", response_model=List[Equipment])
-def list_equipment():
-    return list(db["equipment"].values())
+@app.get("/equipment/", response_model=List[schemas.Equipment])
+def read_equipment(db: Session = Depends(get_db)):
+    return Service.get_equipment(db)
 
-# --- Requests ---
-@app.post("/requests/", response_model=MaintenanceRequest)
-def create_request(req_data: MaintenanceRequestBase):
-    """
-    Creates a request with Auto-fill and Validation logic.
-    """
-    return Service.create_request(req_data)
+# --- REQUESTS ---
+@app.post("/requests/", response_model=schemas.MaintenanceRequest)
+def create_request(req: schemas.MaintenanceRequestCreate, db: Session = Depends(get_db)):
+    return Service.create_request(db, req)
 
-@app.get("/requests/", response_model=List[MaintenanceRequest])
-def list_requests():
-    return list(db["requests"].values())
+@app.get("/requests/", response_model=List[schemas.MaintenanceRequest])
+def read_requests(db: Session = Depends(get_db)):
+    return Service.get_requests(db)
 
-@app.put("/requests/{req_id}/state", response_model=MaintenanceRequest)
-def update_request_state(req_id: str, state: RequestState):
-    """
-    Updates state. If 'scrap', marks equipment as scrapped.
-    """
-    return Service.change_state(req_id, state)
+@app.put("/requests/{req_id}/state", response_model=schemas.MaintenanceRequest)
+def start_request(req_id: int, state: schemas.RequestState, db: Session = Depends(get_db)):
+    return Service.change_state(db, req_id, state)
 
 @app.get("/health")
 def health_check():
@@ -68,10 +58,10 @@ def health_check():
 
 @app.get("/")
 def home():
-    return {"message": "GearGuard Backend is Running. usage: /docs for swagger"}
+    return {"message": "GearGuard Backend is Running (PostgreSQL Connected). usage: /docs for swagger"}
 
 if __name__ == "__main__":
     import uvicorn
-    print("Starting GearGuard Backend...")
+    print("Starting GearGuard Backend with Postgres...")
     # Using 127.0.0.1 is safer for Windows local development
     uvicorn.run(app, host="127.0.0.1", port=8000)

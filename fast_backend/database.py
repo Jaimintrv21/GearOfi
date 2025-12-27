@@ -1,18 +1,24 @@
-from typing import Dict
-from models import Equipment, MaintenanceTeam, MaintenanceRequest
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+import os
 
-# In-memory storage
-db = {
-    "teams": {},       # id -> MaintenanceTeam
-    "equipment": {},   # id -> Equipment
-    "requests": {}     # id -> MaintenanceRequest
-}
+# Default to local postgres. Override with env var if needed.
+# Format: postgresql://user:password@host/dbname
+SQLALCHEMY_DATABASE_URL = os.getenv(
+    "DATABASE_URL", 
+    "postgresql://postgres:123456@localhost:5432/gearguard_db"
+)
 
-def get_team(team_id: str) -> MaintenanceTeam | None:
-    return db["teams"].get(team_id)
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-def get_equipment(equip_id: str) -> Equipment | None:
-    return db["equipment"].get(equip_id)
+Base = declarative_base()
 
-def get_request(req_id: str) -> MaintenanceRequest | None:
-    return db["requests"].get(req_id)
+# Dependency for FastAPI to get DB session
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
