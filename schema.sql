@@ -72,9 +72,7 @@ CREATE TABLE equipment (
     name VARCHAR(100) NOT NULL,
     serial_number VARCHAR(100) UNIQUE NOT NULL,
     category VARCHAR(50),
-    department VARCHAR(100),
     location VARCHAR(100),
-    model VARCHAR(100),
     status equipment_status DEFAULT 'Active',
     
     -- THE CONNECTION LOGIC (Foreign Keys)
@@ -84,7 +82,6 @@ CREATE TABLE equipment (
     -- META DATA
     purchase_date DATE,
     warranty_end DATE,
-    last_maintenance DATE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -92,7 +89,6 @@ CREATE TABLE equipment (
 CREATE TABLE maintenance_requests (
     id SERIAL PRIMARY KEY,
     subject VARCHAR(200) NOT NULL,
-    description TEXT,
     req_type request_type NOT NULL,
     stage request_stage DEFAULT 'New',
     priority request_priority DEFAULT 'Normal',
@@ -105,7 +101,6 @@ CREATE TABLE maintenance_requests (
 
     -- SCHEDULING & METRICS
     scheduled_date TIMESTAMP,
-    due_date TIMESTAMP,
     close_date TIMESTAMP,
     duration_hours FLOAT DEFAULT 0.0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -136,14 +131,14 @@ INSERT INTO team_members (team_id, user_id) VALUES
 (2, 3); -- IT -> Charlie
 
 -- 4. Insert Equipment
-INSERT INTO equipment (name, serial_number, category, department, location, model, purchase_date, warranty_end, last_maintenance, assigned_team_id, assigned_technician_id) VALUES 
-('Generator X500', 'GEN-2024-001', 'Heavy Machinery', 'Production', 'Warehouse A', 'Generator Model X500', '2024-01-15', '2027-01-15', '2024-11-20', 1, 2),
-('Dell Server Rack', 'SRV-2024-999', 'Computers', 'IT', 'Server Room', 'Dell PowerEdge R740', '2024-06-10', '2027-06-10', '2024-12-01', 2, 3);
+INSERT INTO equipment (name, serial_number, category, location, assigned_team_id, assigned_technician_id) VALUES 
+('Generator X500', 'GEN-2024-001', 'Heavy Machinery', 'Warehouse A', 1, 2),
+('Dell Server Rack', 'SRV-2024-999', 'Computers', 'Server Room', 2, 3);
 
 -- 5. Insert a Maintenance Request
 -- A request for the Generator, assigned to the Mechanics team
-INSERT INTO maintenance_requests (subject, description, req_type, stage, priority, equipment_id, team_id, technician_id, created_by_id, scheduled_date, due_date) VALUES 
-('Oil Leak Detected', 'Generator showing signs of oil leakage near the base', 'Corrective', 'New', 'High', 1, 1, 2, 1, NOW(), NOW() + INTERVAL '7 days');
+INSERT INTO maintenance_requests (subject, req_type, stage, equipment_id, team_id, technician_id, created_by_id, scheduled_date) VALUES 
+('Oil Leak Detected', 'Corrective', 'New', 1, 1, 2, 1, NOW());
 
 -- ============================================================================
 -- How this connects everything:

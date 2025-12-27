@@ -22,7 +22,11 @@ export function Sidebar() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
-  const handleLogout = () => {
+  const handleLogout = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     logout();
     navigate('/login');
   };
@@ -63,10 +67,10 @@ export function Sidebar() {
       </nav>
 
       {/* User Section */}
-      <div className="p-4 border-t">
+      <div className="p-4 border-t space-y-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <div className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 cursor-pointer">
+            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 cursor-pointer text-left">
               <img
                 src={user?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=User'}
                 alt={user?.fullName || 'User'}
@@ -80,16 +84,29 @@ export function Sidebar() {
                   {user?.email || 'user@example.com'}
                 </p>
               </div>
-              <LogOut className="w-4 h-4 text-gray-400" />
-            </div>
+            </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+            <DropdownMenuItem 
+              onSelect={(e) => {
+                e.preventDefault();
+                handleLogout();
+              }}
+              className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+            >
               <LogOut className="w-4 h-4 mr-2" />
               Logout
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        {/* Direct Logout Button */}
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg hover:bg-red-50 text-red-600 text-sm font-medium transition-colors border border-red-200"
+        >
+          <LogOut className="w-4 h-4" />
+          Logout
+        </button>
       </div>
     </div>
   );
