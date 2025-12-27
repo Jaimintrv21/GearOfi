@@ -39,6 +39,7 @@ This is the User Interface.
 2.  Go to the frontend folder:
     ```powershell
     cd d:\GearO5\Frontend
+    
     ```
 3.  Install dependencies (first time only):
     ```powershell
