@@ -1,7 +1,7 @@
 import { Download, Filter, TrendingUp, Wrench, DollarSign, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { equipment, maintenanceRequests } from '../data/mockData';
+import { api } from '../../services/api';
 import {
   BarChart,
   Bar,
@@ -24,44 +24,59 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/select';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const STATUS_COLORS = {
-  new: '#3b82f6',
-  'in-progress': '#f97316',
-  repaired: '#22c55e',
-  scrap: '#ef4444',
+  'New': '#3b82f6',
+  'In Progress': '#f97316',
+  'Repaired': '#22c55e',
+  'Scrap': '#ef4444',
 };
 
 const PRIORITY_COLORS = {
-  low: '#9ca3af',
-  medium: '#eab308',
-  high: '#ef4444',
+  'Low': '#9ca3af',
+  'Medium': '#eab308',
+  'Normal': '#eab308', // Mapping for Normal
+  'High': '#ef4444',
+  'Critical': '#b91c1c',
 };
 
 export function Reports() {
   const [dateRange, setDateRange] = useState('last-30-days');
+  const [equipment, setEquipment] = useState<any[]>([]);
+  const [maintenanceRequests, setRequests] = useState<any[]>([]);
+
+  useEffect(() => {
+    Promise.all([api.fetchEquipment(), api.fetchRequests()])
+      .then(([eqData, reqData]) => {
+        setEquipment(eqData);
+        setRequests(reqData);
+      })
+      .catch(err => console.error("Failed to load report data", err));
+  }, []);
 
   // Calculate statistics
   const totalEquipment = equipment.length;
-  const activeEquipment = equipment.filter(e => e.status === 'active').length;
+  // Note: Backend uses 'Active', 'Maintenance', 'Scrapped'
+  const activeEquipment = equipment.filter(e => e.status === 'Active').length;
   const totalRequests = maintenanceRequests.length;
-  const completedRequests = maintenanceRequests.filter(r => r.status === 'repaired').length;
+  const completedRequests = maintenanceRequests.filter(r => r.stage === 'Repaired').length;
 
-  // Status distribution data
+  // Status distribution data (Dynamic)
   const statusData = [
-    { name: 'New', value: maintenanceRequests.filter(r => r.status === 'new').length, color: STATUS_COLORS.new },
-    { name: 'In Progress', value: maintenanceRequests.filter(r => r.status === 'in-progress').length, color: STATUS_COLORS['in-progress'] },
-    { name: 'Repaired', value: maintenanceRequests.filter(r => r.status === 'repaired').length, color: STATUS_COLORS.repaired },
-    { name: 'Scrap', value: maintenanceRequests.filter(r => r.status === 'scrap').length, color: STATUS_COLORS.scrap },
-  ];
+    { name: 'New', value: maintenanceRequests.filter(r => r.stage === 'New').length, color: STATUS_COLORS['New'] },
+    { name: 'In Progress', value: maintenanceRequests.filter(r => r.stage === 'In Progress').length, color: STATUS_COLORS['In Progress'] },
+    { name: 'Repaired', value: maintenanceRequests.filter(r => r.stage === 'Repaired').length, color: STATUS_COLORS['Repaired'] },
+    { name: 'Scrap', value: maintenanceRequests.filter(r => r.stage === 'Scrap').length, color: STATUS_COLORS['Scrap'] },
+  ].filter(d => d.value > 0);
 
   // Priority distribution
   const priorityData = [
-    { name: 'Low', value: maintenanceRequests.filter(r => r.priority === 'low').length, color: PRIORITY_COLORS.low },
-    { name: 'Medium', value: maintenanceRequests.filter(r => r.priority === 'medium').length, color: PRIORITY_COLORS.medium },
-    { name: 'High', value: maintenanceRequests.filter(r => r.priority === 'high').length, color: PRIORITY_COLORS.high },
-  ];
+    { name: 'Low', value: maintenanceRequests.filter(r => r.priority === 'Low').length, color: PRIORITY_COLORS['Low'] },
+    { name: 'Normal', value: maintenanceRequests.filter(r => r.priority === 'Normal').length, color: PRIORITY_COLORS['Normal'] },
+    { name: 'High', value: maintenanceRequests.filter(r => r.priority === 'High').length, color: PRIORITY_COLORS['High'] },
+    { name: 'Critical', value: maintenanceRequests.filter(r => r.priority === 'Critical').length, color: PRIORITY_COLORS['Critical'] },
+  ].filter(d => d.value > 0);
 
   // Equipment category distribution
   const categoryData = equipment.reduce((acc: any[], eq) => {
@@ -74,7 +89,7 @@ export function Reports() {
     return acc;
   }, []);
 
-  // Monthly maintenance trend (mock data)
+  // Monthly maintenance trend (mock data - backend doesn't have historical aggregation yet)
   const monthlyTrendData = [
     { month: 'Jul', requests: 12, completed: 10, cost: 4500 },
     { month: 'Aug', requests: 15, completed: 14, cost: 5200 },
@@ -87,8 +102,9 @@ export function Reports() {
   // Equipment-wise maintenance count
   const equipmentMaintenanceData = equipment.map(eq => ({
     name: eq.name,
-    requests: maintenanceRequests.filter(r => r.equipmentId === eq.id).length,
+    requests: maintenanceRequests.filter(r => r.equipment_id === eq.id).length,
   })).filter(item => item.requests > 0).slice(0, 5);
+
 
   return (
     <div className="p-4 lg:p-8 space-y-6">
@@ -325,13 +341,13 @@ export function Reports() {
               </thead>
               <tbody>
                 {equipment.map((eq) => {
-                  const requestCount = maintenanceRequests.filter(r => r.equipmentId === eq.id).length;
+                  const requestCount = maintenanceRequests.filter(r => r.equipment_id === eq.id).length;
                   return (
                     <tr key={eq.id} className="border-b hover:bg-gray-50">
                       <td className="p-3">
                         <div>
                           <p className="font-medium text-gray-900">{eq.name}</p>
-                          <p className="text-sm text-gray-500">{eq.model}</p>
+                          <p className="text-sm text-gray-500">{eq.serial_number}</p>
                         </div>
                       </td>
                       <td className="p-3 text-gray-700">{eq.category}</td>
@@ -342,12 +358,11 @@ export function Reports() {
                         </span>
                       </td>
                       <td className="p-3 text-gray-700">
-                        {new Date(eq.lastMaintenance).toLocaleDateString()}
+                        {eq.created_at ? new Date(eq.created_at).toLocaleDateString() : '-'}
                       </td>
                       <td className="p-3 text-center">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          eq.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                        }`}>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${eq.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                          }`}>
                           {eq.status}
                         </span>
                       </td>
@@ -376,7 +391,7 @@ export function Reports() {
                 </div>
               </div>
             </Button>
-            
+
             <Button variant="outline" className="h-auto p-4 justify-start">
               <div className="flex items-center gap-3 w-full">
                 <Download className="w-5 h-5 text-green-600" />
@@ -386,7 +401,7 @@ export function Reports() {
                 </div>
               </div>
             </Button>
-            
+
             <Button variant="outline" className="h-auto p-4 justify-start">
               <div className="flex items-center gap-3 w-full">
                 <Download className="w-5 h-5 text-orange-600" />

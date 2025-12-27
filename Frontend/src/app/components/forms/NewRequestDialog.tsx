@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -18,14 +18,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../ui/select';
-import { equipment } from '../../data/mockData';
+import { api } from '../../../services/api';
 
 interface NewRequestDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
 }
 
-export function NewRequestDialog({ open, onOpenChange }: NewRequestDialogProps) {
+export function NewRequestDialog({ open, onOpenChange, onSuccess }: NewRequestDialogProps) {
+  const [equipmentList, setEquipmentList] = useState<any[]>([]);
+
   const [formData, setFormData] = useState({
     equipmentId: '',
     title: '',
@@ -34,22 +37,40 @@ export function NewRequestDialog({ open, onOpenChange }: NewRequestDialogProps) 
     dueDate: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (open) {
+      api.fetchEquipment().then(setEquipmentList).catch(console.error);
+    }
+  }, [open]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission here
-    console.log('Request data:', formData);
-    // Reset form and close dialog
-    setFormData({
-      equipmentId: '',
-      title: '',
-      description: '',
-      priority: '',
-      dueDate: '',
-    });
-    onOpenChange(false);
+    try {
+      await api.createRequest({
+        equipment_id: parseInt(formData.equipmentId),
+        subject: formData.title,
+        req_type: 'Corrective', // Default or add field
+        priority: formData.priority,
+        scheduled_date: formData.dueDate
+      });
+
+      // Reset form and close dialog
+      setFormData({
+        equipmentId: '',
+        title: '',
+        description: '',
+        priority: '',
+        dueDate: '',
+      });
+      onOpenChange(false);
+      if (onSuccess) onSuccess();
+    } catch (err) {
+      console.error("Failed to create request", err);
+      alert("Failed to create request");
+    }
   };
 
-  const selectedEquipment = equipment.find(eq => eq.id === formData.equipmentId);
+  const selectedEquipment = equipmentList.find(eq => eq.id.toString() === formData.equipmentId);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -60,7 +81,7 @@ export function NewRequestDialog({ open, onOpenChange }: NewRequestDialogProps) 
             Submit a new maintenance request for equipment that needs attention.
           </DialogDescription>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="equipment">Select Equipment *</Label>
@@ -72,8 +93,8 @@ export function NewRequestDialog({ open, onOpenChange }: NewRequestDialogProps) 
                 <SelectValue placeholder="Choose equipment" />
               </SelectTrigger>
               <SelectContent>
-                {equipment.filter(eq => eq.status === 'active').map((eq) => (
-                  <SelectItem key={eq.id} value={eq.id}>
+                {equipmentList.filter(eq => eq.status === 'Active').map((eq) => (
+                  <SelectItem key={eq.id} value={eq.id.toString()}>
                     {eq.name} - {eq.location}
                   </SelectItem>
                 ))}
@@ -81,7 +102,7 @@ export function NewRequestDialog({ open, onOpenChange }: NewRequestDialogProps) 
             </Select>
             {selectedEquipment && (
               <p className="text-sm text-gray-500">
-                {selectedEquipment.model} • S/N: {selectedEquipment.serialNumber}
+                {selectedEquipment.category} • S/N: {selectedEquipment.serial_number}
               </p>
             )}
           </div>
@@ -120,22 +141,28 @@ export function NewRequestDialog({ open, onOpenChange }: NewRequestDialogProps) 
                   <SelectValue placeholder="Select priority" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="low">
+                  <SelectItem value="Low">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-gray-500" />
                       Low
                     </div>
                   </SelectItem>
-                  <SelectItem value="medium">
+                  <SelectItem value="Normal">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                      Medium
+                      Normal
                     </div>
                   </SelectItem>
-                  <SelectItem value="high">
+                  <SelectItem value="High">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-red-500" />
                       High
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="Critical">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-red-900" />
+                      Critical
                     </div>
                   </SelectItem>
                 </SelectContent>

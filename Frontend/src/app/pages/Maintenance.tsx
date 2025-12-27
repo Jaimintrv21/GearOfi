@@ -264,10 +264,7 @@ export function Maintenance() {
           </AlertDialogContent>
         </AlertDialog>
 
-        <NewRequestDialog open={showNewRequestDialog} onOpenChange={(open) => {
-          setShowNewRequestDialog(open);
-          if (!open) loadRequests();
-        }} />
+        <NewRequestDialog open={showNewRequestDialog} onOpenChange={setShowNewRequestDialog} onSuccess={loadRequests} />
       </div>
     </DndProvider>
   );

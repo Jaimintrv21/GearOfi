@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Wrench } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { preventiveMaintenanceSchedule, maintenanceRequests } from '../data/mockData';
 import { Badge } from '../components/ui/badge';
 import { ScheduleMaintenanceDialog } from '../components/forms/ScheduleMaintenanceDialog';
+import { api } from '../../services/api';
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -19,6 +19,18 @@ export function Calendar() {
   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string>('');
 
+  const [equipment, setEquipment] = useState<any[]>([]);
+  const [requests, setRequests] = useState<any[]>([]);
+
+  useEffect(() => {
+    Promise.all([api.fetchEquipment(), api.fetchRequests()])
+      .then(([eq, req]) => {
+        setEquipment(eq);
+        setRequests(req);
+      })
+      .catch(err => console.error("Failed to load calendar data", err));
+  }, []);
+
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
@@ -29,7 +41,7 @@ export function Calendar() {
 
   // Generate calendar days
   const calendarDays = [];
-  
+
   // Previous month days
   for (let i = firstDayOfMonth - 1; i >= 0; i--) {
     calendarDays.push({
@@ -38,7 +50,7 @@ export function Calendar() {
       date: new Date(year, month - 1, daysInPrevMonth - i),
     });
   }
-  
+
   // Current month days
   for (let day = 1; day <= daysInMonth; day++) {
     calendarDays.push({
@@ -47,7 +59,7 @@ export function Calendar() {
       date: new Date(year, month, day),
     });
   }
-  
+
   // Next month days to fill the grid
   const remainingDays = 42 - calendarDays.length;
   for (let day = 1; day <= remainingDays; day++) {
@@ -73,22 +85,38 @@ export function Calendar() {
   // Get maintenance for a specific date
   const getMaintenanceForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
-    
-    const preventive = preventiveMaintenanceSchedule.filter(pm => 
-      pm.scheduledDate === dateStr
-    );
-    
-    const regular = maintenanceRequests.filter(mr => 
-      mr.dueDate === dateStr
-    );
-    
-    return { preventive, regular };
+
+    // Filter reqs
+    const dailyRequests = requests.filter(r => {
+      if (!r.scheduled_date) return false;
+      return r.scheduled_date.startsWith(dateStr);
+    });
+
+    const preventive = dailyRequests.filter(r => r.req_type === 'Preventive');
+    const regular = dailyRequests.filter(r => r.req_type === 'Corrective'); // Or others
+
+    // Enrich with names
+    const enrich = (list: any[]) => list.map(r => ({
+      ...r,
+      equipmentName: equipment.find(e => e.id === r.equipment_id)?.name || 'Unknown'
+    }));
+
+    return { preventive: enrich(preventive), regular: enrich(regular) };
   };
 
   const isToday = (date: Date) => {
     const today = new Date();
     return date.toDateString() === today.toDateString();
   };
+
+  const upcomingMaintenance = requests
+    .filter(r => new Date(r.scheduled_date) >= new Date() && r.stage !== 'Repaired' && r.stage !== 'Scrap')
+    .sort((a, b) => new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime())
+    .slice(0, 5)
+    .map(r => ({
+      ...r,
+      equipmentName: equipment.find(e => e.id === r.equipment_id)?.name
+    }));
 
   return (
     <div className="p-4 lg:p-8 space-y-6">
@@ -161,16 +189,14 @@ export function Calendar() {
               return (
                 <div
                   key={idx}
-                  className={`min-h-[80px] lg:min-h-[120px] p-2 border rounded-lg transition-colors ${
-                    !calDay.isCurrentMonth
+                  className={`min-h-[80px] lg:min-h-[120px] p-2 border rounded-lg transition-colors ${!calDay.isCurrentMonth
                       ? 'bg-gray-50 text-gray-400'
                       : 'bg-white hover:bg-blue-50 cursor-pointer'
-                  } ${isTodayDate ? 'ring-2 ring-blue-600' : ''}`}
+                    } ${isTodayDate ? 'ring-2 ring-blue-600' : ''}`}
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className={`text-sm font-medium ${
-                      isTodayDate ? 'text-blue-600' : ''
-                    }`}>
+                    <span className={`text-sm font-medium ${isTodayDate ? 'text-blue-600' : ''
+                      }`}>
                       {calDay.day}
                     </span>
                     {hasEvents && (
@@ -184,7 +210,7 @@ export function Calendar() {
                         <div
                           key={pm.id}
                           className="text-xs p-1 rounded bg-green-100 text-green-700 truncate"
-                          title={pm.title}
+                          title={pm.subject}
                         >
                           <div className="flex items-center gap-1">
                             <CalendarIcon className="w-3 h-3 flex-shrink-0" />
@@ -192,12 +218,12 @@ export function Calendar() {
                           </div>
                         </div>
                       ))}
-                      
+
                       {regular.slice(0, 2).map((mr) => (
                         <div
                           key={mr.id}
                           className="text-xs p-1 rounded bg-orange-100 text-orange-700 truncate"
-                          title={mr.title}
+                          title={mr.subject}
                         >
                           <div className="flex items-center gap-1">
                             <Wrench className="w-3 h-3 flex-shrink-0" />
@@ -205,7 +231,7 @@ export function Calendar() {
                           </div>
                         </div>
                       ))}
-                      
+
                       {(preventive.length + regular.length) > 2 && (
                         <div className="text-xs text-gray-500 font-medium">
                           +{(preventive.length + regular.length) - 2} more
@@ -225,88 +251,38 @@ export function Calendar() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <CalendarIcon className="w-5 h-5 text-green-600" />
-              Preventive Maintenance Schedule
+              <CalendarIcon className="w-5 h-5 text-blue-600" />
+              Upcoming Schedule
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {preventiveMaintenanceSchedule.length > 0 ? (
+            {upcomingMaintenance.length > 0 ? (
               <div className="space-y-3">
-                {preventiveMaintenanceSchedule.map((pm) => (
-                  <div key={pm.id} className="p-4 border rounded-lg hover:bg-gray-50">
+                {upcomingMaintenance.map((req) => (
+                  <div key={req.id} className="p-4 border rounded-lg hover:bg-gray-50">
                     <div className="flex items-start justify-between mb-2">
-                      <h4 className="font-medium text-gray-900">{pm.title}</h4>
-                      <Badge className="bg-green-100 text-green-700">
-                        {pm.frequency}
+                      <h4 className="font-medium text-gray-900">{req.subject}</h4>
+                      <Badge className={
+                        req.req_type === 'Preventive' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
+                      }>
+                        {req.req_type}
                       </Badge>
                     </div>
-                    <p className="text-sm text-gray-600 mb-2">{pm.equipmentName}</p>
+                    <p className="text-sm text-gray-600 mb-2">{req.equipmentName}</p>
                     <div className="flex items-center gap-4 text-xs text-gray-500">
                       <span className="flex items-center gap-1">
                         <CalendarIcon className="w-3 h-3" />
-                        {new Date(pm.scheduledDate).toLocaleDateString()}
+                        {new Date(req.scheduled_date).toLocaleDateString()}
                       </span>
-                      {pm.assignedTo && (
-                        <span>Assigned: {pm.assignedTo}</span>
+                      {req.technician_id && (
+                        <span>Tech: #{req.technician_id}</span>
                       )}
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-center text-gray-500 py-8">No preventive maintenance scheduled</p>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Wrench className="w-5 h-5 text-orange-600" />
-              Upcoming Maintenance Requests
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {maintenanceRequests
-              .filter(mr => new Date(mr.dueDate) >= new Date() && mr.status !== 'repaired' && mr.status !== 'scrap')
-              .slice(0, 5)
-              .length > 0 ? (
-              <div className="space-y-3">
-                {maintenanceRequests
-                  .filter(mr => new Date(mr.dueDate) >= new Date() && mr.status !== 'repaired' && mr.status !== 'scrap')
-                  .slice(0, 5)
-                  .map((mr) => {
-                    const statusColors = {
-                      'new': 'bg-blue-100 text-blue-700',
-                      'in-progress': 'bg-orange-100 text-orange-700',
-                      'repaired': 'bg-green-100 text-green-700',
-                      'scrap': 'bg-red-100 text-red-700',
-                    };
-
-                    return (
-                      <div key={mr.id} className="p-4 border rounded-lg hover:bg-gray-50">
-                        <div className="flex items-start justify-between mb-2">
-                          <h4 className="font-medium text-gray-900">{mr.title}</h4>
-                          <Badge className={statusColors[mr.status]}>
-                            {mr.status.replace('-', ' ')}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-gray-600 mb-2">{mr.equipmentName}</p>
-                        <div className="flex items-center gap-4 text-xs text-gray-500">
-                          <span className="flex items-center gap-1">
-                            <CalendarIcon className="w-3 h-3" />
-                            Due: {new Date(mr.dueDate).toLocaleDateString()}
-                          </span>
-                          {mr.assignedTo && (
-                            <span>Assigned: {mr.assignedTo}</span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
-            ) : (
-              <p className="text-center text-gray-500 py-8">No upcoming maintenance requests</p>
+              <p className="text-center text-gray-500 py-8">No upcoming maintenance</p>
             )}
           </CardContent>
         </Card>
@@ -322,7 +298,7 @@ export function Calendar() {
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded bg-orange-100 border border-orange-300" />
-              <span className="text-sm text-gray-700">Maintenance Request</span>
+              <span className="text-sm text-gray-700">Corrective/Regular</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded border-2 border-blue-600" />

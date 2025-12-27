@@ -46,7 +46,7 @@ export function Login() {
         {/* Login Card */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Sign In</h2>
-          
+
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
               {error}
@@ -114,7 +114,7 @@ export function Login() {
         </div>
 
         <p className="text-center text-sm text-gray-500 mt-8">
-          © 2024 GearOfi. All rights reserved.
+
         </p>
       </div>
 
