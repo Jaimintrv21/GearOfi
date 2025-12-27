@@ -43,7 +43,7 @@ class User(UserBase):
     created_at: Optional[datetime]
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # --- Maintenance Team Schemas ---
 class MaintenanceTeamBase(BaseModel):
@@ -57,7 +57,7 @@ class MaintenanceTeam(MaintenanceTeamBase):
     # members: List[User] = [] # Circular dependency risk if not careful, keeping simple for now
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # --- Equipment Schemas ---
 class EquipmentBase(BaseModel):
@@ -80,7 +80,7 @@ class Equipment(EquipmentBase):
     created_at: Optional[datetime]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # --- Maintenance Request Schemas ---
 class MaintenanceRequestBase(BaseModel):
@@ -108,5 +108,5 @@ class MaintenanceRequest(MaintenanceRequestBase):
     created_at: Optional[datetime]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
