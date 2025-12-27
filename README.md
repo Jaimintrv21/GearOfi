@@ -1,56 +1,60 @@
-# GearGuard - Odoo Maintenance System
+# GearGuard - Maintenance Management System
 
-## Project Structure
-- `Frontend/`: XML Views and Static files.
-- `backend/`: Custom Odoo module containing Business Logic, Models, and Security.
+This project contains a **React Frontend** and a standalone **FastAPI Backend**.
+(The Odoo backend is deprecated).
 
-## How to Run
+## 🚀 How to Run
 
-### Prerequisites
-- Odoo 16 or 17 (Community Edition).
-- PostgreSQL running.
+You need two terminal windows open: one for the Backend, one for the Frontend.
 
-### Launch Command (Backend)
-**Crucial Step**: You must run this command from your **Odoo Source/Installation Directory** (the folder containing `odoo-bin`), NOT from inside `D:\GearO5`.
+### 1. Run Backend (FastAPI)
+This handles the logic, database (in-memory), and API.
 
-1. **Open PowerShell**.
-2. **Navigate to Odoo**:
-   ```powershell
-   # Example: cd C:\Odoo\server
-   cd path\to\your\odoo\directory
-   ```
-3. **Run Server**:
-   Point to your project folder using the full path:
-   ```powershell
-   python odoo-bin --addons-path="addons,d:\GearO5" -d gearguard_db -u backend
-   ```
+1.  Open **Terminal 1**.
+2.  Go to the backend folder:
+    ```powershell
+    cd d:\GearO5\fast_backend
+    ```
+3.  Install requirements (if not done):
+    ```powershell
+    pip install fastapi uvicorn
+    ```
+4.  Run the server:
+    ```powershell
+    # Simple run
+    python main.py
+    
+    # Or with auto-reload (for development)
+    python -m uvicorn main:app --reload
+    ```
+    *Server runs at: http://localhost:8000*
+    *Swagger Docs: http://localhost:8000/docs*
 
 ---
 
-## How to Run - Frontend
-The frontend is a React + Vite application.
+### 2. Run Frontend (React)
+This is the User Interface.
 
-### Prerequisites
-- Node.js installed.
-
-### Launch Command
-1. **Navigate**: Open a new terminal and go to the Frontend directory:
+1.  Open **Terminal 2**.
+2.  Go to the frontend folder:
     ```powershell
     cd d:\GearO5\Frontend
     ```
-2. **Install Dependencies** (First time only):
+3.  Install dependencies (first time only):
     ```powershell
     npm install
-    # or
-    pnpm install
     ```
-3. **Start Development Server**:
+4.  Run the dev server:
     ```powershell
     npm run dev
     ```
-    The app will typically run at `http://localhost:5173`.
+    *App runs at: http://localhost:5173*
 
-### Explanation
-- `--addons-path="addons,d:\GearO5"`: Tells Odoo to look for modules in the default folder AND your project folder.
-- `-d gearguard_db`: Uses (or creates) a database named `gearguard_db`.
-- `-u backend`: Installs or updates your module named `backend`.
+## 🔄 Integration
+The Frontend automatically connects to `http://localhost:8000`.
+- **Note**: Since the backend uses an **in-memory database**, all data (teams, equipment, requests) will be reset if you restart the Python backend.
+
+## 📂 Project Structure
+- `fast_backend/`: Python API, Models, Logic.
+- `Frontend/`: React Application.
+- `backend/`: (Legacy) Odoo module - ignore this.
