@@ -1,16 +1,24 @@
 # Dependencies
-node_modules
-.pnp
-.pnp.js
+node_modules/
+Frontend/node_modules/
 
-# Testing
-coverage
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+env/
 
 # Production
-build
+build/
+dist/
+Frontend/dist/
 
 # Misc
 .DS_Store
 .env
 .npmrc
 *.log
+.vite/
+.vscode/
+.idea/
