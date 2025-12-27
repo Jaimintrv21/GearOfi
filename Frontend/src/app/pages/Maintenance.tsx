@@ -102,7 +102,7 @@ function DroppableColumn({ status, requests, onMove }: DroppableColumnProps) {
 
   return (
     <div ref={(node) => { if (node) drop(node); }} className="flex-1 min-w-0">
-      <div className={`rounded-lg border-2 ${status.color} p-3 min-h-[600px]`}>
+      <div className={`rounded-lg border-2 ${status.color} p-3 h-[calc(100vh-220px)] overflow-y-auto`}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex-1 flex items-center gap-2">
             <h3 className="font-semibold text-gray-900">{status.title}</h3>

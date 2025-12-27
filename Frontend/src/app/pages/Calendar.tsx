@@ -189,9 +189,9 @@ export function Calendar() {
               return (
                 <div
                   key={idx}
-                  className={`min-h-[80px] lg:min-h-[120px] p-2 border rounded-lg transition-colors ${!calDay.isCurrentMonth
-                      ? 'bg-gray-50 text-gray-400'
-                      : 'bg-white hover:bg-blue-50 cursor-pointer'
+                  className={`min-h-[80px] lg:min-h-[140px] p-2 border rounded-lg transition-colors overflow-y-auto ${!calDay.isCurrentMonth
+                    ? 'bg-gray-50 text-gray-400'
+                    : 'bg-white hover:bg-blue-50 cursor-pointer'
                     } ${isTodayDate ? 'ring-2 ring-blue-600' : ''}`}
                 >
                   <div className="flex items-center justify-between mb-1">
